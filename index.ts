@@ -112,6 +112,30 @@ export interface UserItem {
   lastActiveAt: string;
 }
 
+export interface InternshipApplication {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  college: string;
+  degree: string;
+  graduationYear: string;
+  domain: string;
+  experienceLevel: string;
+  skills: string[];
+  portfolioUrl?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  resumeUrl: string;
+  statementOfPurpose: string;
+  duration: string;
+  startDate: string;
+  status: 'pending' | 'reviewing' | 'shortlisted' | 'interview' | 'accepted' | 'rejected';
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface DatabaseSchema {
   admin: {
     email: string;
@@ -122,6 +146,7 @@ export interface DatabaseSchema {
   inquiries: InquiryItem[];
   users: UserItem[];
   projects: ProjectItem[];
+  internships: InternshipApplication[];
 }
 
 const readDB = (): DatabaseSchema => {
@@ -131,6 +156,7 @@ const readDB = (): DatabaseSchema => {
     if (!parsed.users) parsed.users = [];
     if (!parsed.projects) parsed.projects = [];
     if (!parsed.inquiries) parsed.inquiries = [];
+    if (!parsed.internships) parsed.internships = [];
     return parsed;
   } catch (err) {
     console.error('Error reading db.json, returning empty structure', err);
@@ -143,7 +169,8 @@ const readDB = (): DatabaseSchema => {
       },
       inquiries: [],
       users: [],
-      projects: []
+      projects: [],
+      internships: []
     };
   }
 };
@@ -290,10 +317,42 @@ const AlphaQuotationSchema = new mongoose.Schema(
   { collection: 'alpha_quotations', timestamps: true }
 );
 
+const AlphaInternshipSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    fullName: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: String,
+    college: { type: String, required: true },
+    degree: { type: String, required: true },
+    graduationYear: { type: String, required: true },
+    domain: { type: String, required: true },
+    experienceLevel: { type: String, default: 'Intermediate' },
+    skills: [String],
+    portfolioUrl: String,
+    githubUrl: String,
+    linkedinUrl: String,
+    resumeUrl: { type: String, required: true },
+    statementOfPurpose: { type: String, required: true },
+    duration: { type: String, default: '3 Months' },
+    startDate: { type: String, default: 'Immediate' },
+    status: {
+      type: String,
+      enum: ['pending', 'reviewing', 'shortlisted', 'interview', 'accepted', 'rejected'],
+      default: 'pending'
+    },
+    adminNotes: String,
+    createdAt: { type: String, default: () => new Date().toISOString() },
+    updatedAt: String
+  },
+  { collection: 'alpha_internships', timestamps: true }
+);
+
 export const InquiryModel = mongoose.models.AlphaInquiry || mongoose.model('AlphaInquiry', AlphaInquirySchema);
 export const ProjectModel = mongoose.models.AlphaProject || mongoose.model('AlphaProject', AlphaProjectSchema);
 export const UserModel = mongoose.models.AlphaUser || mongoose.model('AlphaUser', AlphaUserSchema);
 export const QuotationModel = mongoose.models.AlphaQuotation || mongoose.model('AlphaQuotation', AlphaQuotationSchema);
+export const InternshipModel = mongoose.models.AlphaInternship || mongoose.model('AlphaInternship', AlphaInternshipSchema);
 
 let isMongoConnected = false;
 
@@ -308,6 +367,11 @@ const syncToMongo = async (data: DatabaseSchema) => {
     }
     for (const inq of data.inquiries) {
       await InquiryModel.findOneAndUpdate({ id: inq.id }, inq, { upsert: true });
+    }
+    if (data.internships && data.internships.length > 0) {
+      for (const intern of data.internships) {
+        await InternshipModel.findOneAndUpdate({ id: intern.id }, intern, { upsert: true });
+      }
     }
   } catch (err) {
     console.warn('[MongoDB Atlas] Auto-sync notice:', err);
@@ -333,6 +397,12 @@ export const seedInitialDataFromDB = async () => {
     if (inqCount === 0 && db.inquiries.length > 0) {
       await InquiryModel.insertMany(db.inquiries);
       console.log(`[MongoDB Atlas] Seeded ${db.inquiries.length} inquiries into alpha_inquiries`);
+    }
+
+    const internCount = await InternshipModel.countDocuments();
+    if (internCount === 0 && db.internships && db.internships.length > 0) {
+      await InternshipModel.insertMany(db.internships);
+      console.log(`[MongoDB Atlas] Seeded ${db.internships.length} internship applications into alpha_internships`);
     }
   } catch (err) {
     console.error('[MongoDB Atlas] Seeding notice:', err);
@@ -1005,6 +1075,12 @@ app.get('/api/admin/stats', (_req: Request, res: Response) => {
     estimatedPipeline += u.totalEstimatedValue || 0;
   });
 
+  const totalInternships = (db.internships || []).length;
+  const pendingInternships = (db.internships || []).filter((i) => i.status === 'pending').length;
+  const shortlistedInternships = (db.internships || []).filter(
+    (i) => i.status === 'shortlisted' || i.status === 'interview'
+  ).length;
+
   res.json({
     success: true,
     stats: {
@@ -1016,10 +1092,242 @@ app.get('/api/admin/stats', (_req: Request, res: Response) => {
       totalUsers,
       activeClients,
       estimatedPipeline,
+      totalInternships,
+      pendingInternships,
+      shortlistedInternships,
       currency: 'USD',
       mongoConnected: isMongoConnected
     }
   });
+});
+
+// ---------------------------------------------------------------------
+// INTERNSHIPS & TALENT PIPELINE API (MongoDB Atlas & Local Sync)
+// ---------------------------------------------------------------------
+app.get('/api/internships', async (req: Request, res: Response) => {
+  try {
+    const { domain, status, search } = req.query;
+
+    if (isMongoConnected) {
+      const query: any = {};
+      if (domain && domain !== 'all') {
+        query.domain = domain;
+      }
+      if (status && status !== 'all') {
+        query.status = status;
+      }
+      if (search) {
+        query.$or = [
+          { fullName: { $regex: String(search), $options: 'i' } },
+          { email: { $regex: String(search), $options: 'i' } },
+          { college: { $regex: String(search), $options: 'i' } },
+          { domain: { $regex: String(search), $options: 'i' } },
+          { skills: { $regex: String(search), $options: 'i' } }
+        ];
+      }
+      const internships = await InternshipModel.find(query).sort({ createdAt: -1 });
+      return res.json({ success: true, count: internships.length, internships });
+    }
+
+    const db = readDB();
+    let results = db.internships || [];
+
+    if (domain && domain !== 'all') {
+      results = results.filter((i) => i.domain.toLowerCase() === String(domain).toLowerCase());
+    }
+    if (status && status !== 'all') {
+      results = results.filter((i) => i.status === status);
+    }
+    if (search) {
+      const q = String(search).toLowerCase();
+      results = results.filter(
+        (i) =>
+          i.fullName.toLowerCase().includes(q) ||
+          i.email.toLowerCase().includes(q) ||
+          i.college.toLowerCase().includes(q) ||
+          i.domain.toLowerCase().includes(q) ||
+          i.skills.some((s) => s.toLowerCase().includes(q))
+      );
+    }
+
+    res.json({ success: true, count: results.length, internships: results });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/api/internships/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (isMongoConnected) {
+      const item = await InternshipModel.findOne({
+        $or: [{ id }, { email: id.toLowerCase() }]
+      });
+      if (!item) {
+        return res.status(404).json({ success: false, message: 'Internship application not found.' });
+      }
+      return res.json({ success: true, internship: item });
+    }
+
+    const db = readDB();
+    const item = (db.internships || []).find((i) => i.id === id || i.email.toLowerCase() === id.toLowerCase());
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Internship application not found.' });
+    }
+    res.json({ success: true, internship: item });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/internships', async (req: Request, res: Response) => {
+  try {
+    const {
+      fullName,
+      email,
+      phone,
+      college,
+      degree,
+      graduationYear,
+      domain,
+      experienceLevel,
+      skills,
+      portfolioUrl,
+      githubUrl,
+      linkedinUrl,
+      resumeUrl,
+      statementOfPurpose,
+      duration,
+      startDate
+    } = req.body;
+
+    if (!fullName || !email || !college || !degree || !domain || !resumeUrl || !statementOfPurpose) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please complete all required fields (Full Name, Email, College, Degree, Domain, Resume Link, and Statement of Purpose).'
+      });
+    }
+
+    const id = `AE-INT-${Date.now().toString().slice(-6)}`;
+    const newApplication: InternshipApplication = {
+      id,
+      fullName: fullName.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone?.trim(),
+      college: college.trim(),
+      degree: degree.trim(),
+      graduationYear: graduationYear?.trim() || '2026',
+      domain: domain.trim(),
+      experienceLevel: experienceLevel || 'Intermediate',
+      skills: Array.isArray(skills)
+        ? skills
+        : typeof skills === 'string'
+        ? skills.split(',').map((s: string) => s.trim()).filter(Boolean)
+        : [],
+      portfolioUrl: portfolioUrl?.trim(),
+      githubUrl: githubUrl?.trim(),
+      linkedinUrl: linkedinUrl?.trim(),
+      resumeUrl: resumeUrl.trim(),
+      statementOfPurpose: statementOfPurpose.trim(),
+      duration: duration || '3 Months',
+      startDate: startDate || 'Immediate',
+      status: 'pending',
+      adminNotes: 'Application received via Careers Portal. Pending review.',
+      createdAt: new Date().toISOString()
+    };
+
+    const db = readDB();
+    if (!db.internships) db.internships = [];
+    db.internships.unshift(newApplication);
+    writeDB(db);
+
+    if (isMongoConnected) {
+      try {
+        await InternshipModel.create(newApplication);
+      } catch (mongoErr) {
+        console.warn('[MongoDB Atlas] Could not create in Mongo directly, fallback wrote to db.json:', mongoErr);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Your internship application has been submitted successfully to Alpha Encoders engineering board.',
+      applicationId: id,
+      internship: newApplication
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.patch('/api/internships/:id/status', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status, adminNotes } = req.body;
+
+    const validStatuses = ['pending', 'reviewing', 'shortlisted', 'interview', 'accepted', 'rejected'];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+    }
+
+    const db = readDB();
+    if (!db.internships) db.internships = [];
+    const index = db.internships.findIndex((i) => i.id === id);
+
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Application not found.' });
+    }
+
+    if (status) db.internships[index].status = status;
+    if (adminNotes !== undefined) db.internships[index].adminNotes = adminNotes;
+    db.internships[index].updatedAt = new Date().toISOString();
+
+    writeDB(db);
+
+    if (isMongoConnected) {
+      await InternshipModel.findOneAndUpdate(
+        { id },
+        {
+          ...(status ? { status } : {}),
+          ...(adminNotes !== undefined ? { adminNotes } : {}),
+          updatedAt: db.internships[index].updatedAt
+        }
+      );
+    }
+
+    res.json({
+      success: true,
+      message: 'Internship application status updated successfully.',
+      internship: db.internships[index]
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/internships/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    if (!db.internships) db.internships = [];
+
+    const initLen = db.internships.length;
+    db.internships = db.internships.filter((i) => i.id !== id);
+
+    if (db.internships.length === initLen) {
+      return res.status(404).json({ success: false, message: 'Application not found.' });
+    }
+
+    writeDB(db);
+
+    if (isMongoConnected) {
+      await InternshipModel.deleteOne({ id });
+    }
+
+    res.json({ success: true, message: 'Internship application deleted successfully.' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // ---------------------------------------------------------------------
