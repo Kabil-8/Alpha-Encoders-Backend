@@ -1,0 +1,378 @@
+{
+  "admin": {
+    "email": "admin@alphaencoders.com",
+    "passwordHash": "admin123",
+    "name": "Lead Architect",
+    "role": "Super Admin"
+  },
+  "inquiries": [
+    {
+      "id": "inq-1712001",
+      "fullName": "Sarah Jenkins",
+      "email": "sarah.jenkins@artisanflora.com",
+      "phone": "+1 415-555-0182",
+      "company": "Artisan Flora Studio",
+      "websiteType": "E-commerce",
+      "requiredFeatures": ["Product catalog", "Online payments", "Contact form", "SEO"],
+      "estimatedBudget": "$2,500 – $5,000",
+      "completionTimeline": "1-2 months",
+      "description": "We run a bespoke botanical design brand and need a modern storefront similar to TheCustomNest with product catalogs and custom gift packaging checkout.",
+      "status": "new",
+      "notes": "High intent client. Referred from portfolio showcase. Wants custom cart drawer.",
+      "createdAt": "2026-10-12T08:30:00.000Z"
+    },
+    {
+      "id": "inq-1712002",
+      "fullName": "Marcus Vance",
+      "email": "marcus@vancecapital.io",
+      "phone": "+1 212-555-0199",
+      "company": "Vance Advisory Partners",
+      "websiteType": "Business website",
+      "requiredFeatures": ["Contact form", "SEO", "Analytics"],
+      "estimatedBudget": "$5,000 – $10,000",
+      "completionTimeline": "Within 2-4 weeks",
+      "description": "Corporate headquarters website revamp for a private investment advisory firm. We require clean typography, executive bios, and fast mobile loading.",
+      "status": "contacted",
+      "notes": "Sent discovery questionnaire. Scheduled Zoom discovery call for Thursday 2 PM EST.",
+      "createdAt": "2026-10-10T14:15:00.000Z"
+    },
+    {
+      "id": "inq-1712003",
+      "fullName": "Elena Rostova",
+      "email": "elena@novalearn.org",
+      "phone": "+44 20 7946 0912",
+      "company": "Nova Learning Academy",
+      "websiteType": "Education",
+      "requiredFeatures": ["User authentication", "Admin dashboard", "Content management", "Booking or appointments"],
+      "estimatedBudget": "$5,000 – $10,000",
+      "completionTimeline": "2-3 months",
+      "description": "Looking to build a digital education portal with curriculum discovery, student registration, and downloadable learning syllabi similar to EduSphere.",
+      "status": "in_review",
+      "notes": "Detailed RFP received. Reviewing technical architecture for student database schema.",
+      "createdAt": "2026-10-08T11:45:00.000Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "usr-101",
+      "fullName": "Anya Sharma",
+      "email": "anya@thecustomnest.com",
+      "phone": "+1 415-890-2341",
+      "company": "TheCustomNest Studio",
+      "location": "San Francisco, CA",
+      "role": "client",
+      "status": "completed",
+      "totalInquiries": 2,
+      "totalEstimatedValue": 4800,
+      "currency": "USD",
+      "notes": "Original creator of TheCustomNest. Extremely pleased with sub-second page performance and custom slide-out cart drawer. Currently planning Phase 2 international multi-currency rollout.",
+      "websiteTypes": ["E-commerce", "Custom Storefront"],
+      "associatedProjects": ["TheCustomNest"],
+      "inquiryHistory": [
+        {
+          "inquiryId": "inq-initial-tcn",
+          "websiteType": "E-commerce",
+          "submittedAt": "2026-08-10T09:15:00.000Z",
+          "estimatedBudget": "$2,500 – $5,000",
+          "completionTimeline": "Within 1 month",
+          "status": "closed",
+          "description": "Bespoke handcrafted crochet catalog with dynamic product filtering and direct checkout flow.",
+          "requiredFeatures": ["Product catalog", "Online payments", "Custom Cart Drawer", "Responsive Mobile UX"]
+        }
+      ],
+      "createdAt": "2026-08-10T09:15:00.000Z",
+      "lastActiveAt": "2026-10-11T16:20:00.000Z"
+    },
+    {
+      "id": "usr-102",
+      "fullName": "Dr. David Chen",
+      "email": "david.chen@edusphere.edu",
+      "phone": "+1 617-432-8800",
+      "company": "EduSphere Academic Foundation",
+      "location": "Boston, MA",
+      "role": "client",
+      "status": "completed",
+      "totalInquiries": 1,
+      "totalEstimatedValue": 6500,
+      "currency": "USD",
+      "notes": "Director of Academic Technologies at EduSphere. Praised the accessible high-contrast UI and modular curriculum breakdown structure. Exploring LMS student portal integration.",
+      "websiteTypes": ["Education", "Academic Portal"],
+      "associatedProjects": ["EduSphere"],
+      "inquiryHistory": [
+        {
+          "inquiryId": "inq-initial-edu",
+          "websiteType": "Education",
+          "submittedAt": "2026-08-25T11:00:00.000Z",
+          "estimatedBudget": "$5,000 – $10,000",
+          "completionTimeline": "1-2 months",
+          "status": "closed",
+          "description": "Academic technology platform to structure complex educational courses and student admissions inquiry flows.",
+          "requiredFeatures": ["Curriculum Explorer", "Admissions Flow", "Accessibility Compliance", "Fast Mobile Loading"]
+        }
+      ],
+      "createdAt": "2026-08-25T11:00:00.000Z",
+      "lastActiveAt": "2026-10-12T10:40:00.000Z"
+    },
+    {
+      "id": "usr-103",
+      "fullName": "Sarah Jenkins",
+      "email": "sarah.jenkins@artisanflora.com",
+      "phone": "+1 415-555-0182",
+      "company": "Artisan Flora Studio",
+      "location": "Portland, OR",
+      "role": "prospect",
+      "status": "in_discussion",
+      "totalInquiries": 1,
+      "totalEstimatedValue": 3750,
+      "currency": "USD",
+      "notes": "Bespoke botanical brand looking for a modern aesthetic similar to TheCustomNest. High purchase intent. Discovery call proposal sent.",
+      "websiteTypes": ["E-commerce"],
+      "associatedProjects": [],
+      "inquiryHistory": [
+        {
+          "inquiryId": "inq-1712001",
+          "websiteType": "E-commerce",
+          "submittedAt": "2026-10-12T08:30:00.000Z",
+          "estimatedBudget": "$2,500 – $5,000",
+          "completionTimeline": "1-2 months",
+          "status": "new",
+          "description": "We run a bespoke botanical design brand and need a modern storefront similar to TheCustomNest with product catalogs and custom gift packaging checkout.",
+          "requiredFeatures": ["Product catalog", "Online payments", "Contact form", "SEO"]
+        }
+      ],
+      "createdAt": "2026-10-12T08:30:00.000Z",
+      "lastActiveAt": "2026-10-12T08:30:00.000Z"
+    },
+    {
+      "id": "usr-104",
+      "fullName": "Marcus Vance",
+      "email": "marcus@vancecapital.io",
+      "phone": "+1 212-555-0199",
+      "company": "Vance Advisory Partners",
+      "location": "New York, NY",
+      "role": "vip",
+      "status": "in_discussion",
+      "totalInquiries": 1,
+      "totalEstimatedValue": 7500,
+      "currency": "USD",
+      "notes": "Managing Partner at Vance Advisory Partners. Needs an institutional corporate headquarters revamp. Executive meeting set for Thursday.",
+      "websiteTypes": ["Business website"],
+      "associatedProjects": [],
+      "inquiryHistory": [
+        {
+          "inquiryId": "inq-1712002",
+          "websiteType": "Business website",
+          "submittedAt": "2026-10-10T14:15:00.000Z",
+          "estimatedBudget": "$5,000 – $10,000",
+          "completionTimeline": "Within 2-4 weeks",
+          "status": "contacted",
+          "description": "Corporate headquarters website revamp for a private investment advisory firm. We require clean typography, executive bios, and fast mobile loading.",
+          "requiredFeatures": ["Contact form", "SEO", "Analytics"]
+        }
+      ],
+      "createdAt": "2026-10-10T14:15:00.000Z",
+      "lastActiveAt": "2026-10-10T15:20:00.000Z"
+    },
+    {
+      "id": "usr-105",
+      "fullName": "Elena Rostova",
+      "email": "elena@novalearn.org",
+      "phone": "+44 20 7946 0912",
+      "company": "Nova Learning Academy",
+      "location": "London, UK",
+      "role": "lead",
+      "status": "in_discussion",
+      "totalInquiries": 1,
+      "totalEstimatedValue": 7500,
+      "currency": "USD",
+      "notes": "European education foundation. Looking to build a comprehensive student portal. Architecture RFP currently under review by our engineering team.",
+      "websiteTypes": ["Education"],
+      "associatedProjects": [],
+      "inquiryHistory": [
+        {
+          "inquiryId": "inq-1712003",
+          "websiteType": "Education",
+          "submittedAt": "2026-10-08T11:45:00.000Z",
+          "estimatedBudget": "$5,000 – $10,000",
+          "completionTimeline": "2-3 months",
+          "status": "in_review",
+          "description": "Looking to build a digital education portal with curriculum discovery, student registration, and downloadable learning syllabi.",
+          "requiredFeatures": ["User authentication", "Admin dashboard", "Content management", "Booking or appointments"]
+        }
+      ],
+      "createdAt": "2026-10-08T11:45:00.000Z",
+      "lastActiveAt": "2026-10-09T09:10:00.000Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "the-custom-nest",
+      "name": "TheCustomNest",
+      "slug": "the-custom-nest",
+      "industry": "Handcrafted Lifestyle & E-Commerce",
+      "tagline": "Artisan Crochet & Handcrafted Lifestyle Storefront",
+      "description": "A bespoke e-commerce platform designed and built for TheCustomNest, an artisan crochet brand. Engineered with dynamic category navigation, interactive product catalogs, an intuitive responsive cart drawer, and custom brand storytelling tailored to handcrafted goods.",
+      "clientName": "TheCustomNest Studio",
+      "clientFeedback": "Alpha Encoders took our artisanal brand and elevated it to a high-converting digital boutique. Our mobile checkout speed doubled and customers constantly praise how smooth the shopping experience is.",
+      "projectBudget": "$4,800",
+      "deliveryDuration": "3 Weeks",
+      "completionDate": "September 2026",
+      "services": [
+        "E-commerce Development",
+        "UI/UX Brand Design",
+        "Responsive Mobile Optimization",
+        "Cart & Inquiry Flow",
+        "Performance Tuning"
+      ],
+      "technologies": ["React", "TypeScript", "Tailwind CSS", "Vite", "Lucide Icons", "Framer Motion"],
+      "liveUrl": "https://www.thecustomnest.shop/",
+      "githubUrl": "https://github.com/alpha-encoders/the-custom-nest",
+      "verifiedResult": "Deployed custom e-commerce experience with sub-second page loads (0.38s FCP) and zero layout shifts across mobile and desktop.",
+      "featured": true,
+      "category": "E-commerce",
+      "highlights": [
+        "Multi-category filtering for custom crochet collections with instant client-side state",
+        "Frictionless slide-out cart drawer with instant quantity controls and optimistic updates",
+        "Handcrafted aesthetic tailored to boutique artisan goods with warm typography",
+        "Sub-second image loading with responsive WebP delivery and blur placeholders",
+        "Zero-dependency lightweight checkout inquiry pathway with spam mitigation"
+      ],
+      "architectureOverview": "Built with modular React and TypeScript components, prioritizing fast initial bundle delivery and lightweight state management. Custom SVG accents and responsive image optimization ensure snappy performance on all mobile networks without heavy CMS overhead.",
+      "metrics": {
+        "lighthousePerformance": 99,
+        "pageSpeed": "0.38s",
+        "accessibility": 100,
+        "seoScore": 100,
+        "payloadSize": "142 KB"
+      },
+      "createdAt": "2026-09-15T10:00:00.000Z",
+      "updatedAt": "2026-10-12T14:00:00.000Z"
+    },
+    {
+      "id": "javalearn",
+      "name": "JavaLearn",
+      "slug": "javalearn",
+      "industry": "Developer Systems & Computer Science Education",
+      "tagline": "Interactive Java Learning Platform & Code Architecture Guide",
+      "description": "An interactive, developer-centric learning platform engineered to master Java programming, object-oriented software patterns, concurrency, algorithms, and backend enterprise architecture. Built with real-time code snippet exploration, progressive concept roadmaps, and high-performance interactive UI.",
+      "clientName": "JavaLearn Systems",
+      "clientFeedback": "The clean dark-mode ergonomics, syntax-highlighted code samples, and instant client-side filtering make JavaLearn one of the smoothest developer reference portals our engineering team has experienced.",
+      "projectBudget": "$5,400",
+      "deliveryDuration": "3 Weeks",
+      "completionDate": "October 2026",
+      "services": [
+        "Developer Platform Engineering",
+        "Interactive Code Sandboxing",
+        "Technical Documentation UX",
+        "Performance Tuning"
+      ],
+      "technologies": ["React", "TypeScript", "Tailwind CSS", "Vite", "Lucide Icons", "Syntax Highlighting"],
+      "liveUrl": "https://javalearn-omega.vercel.app/",
+      "githubUrl": "https://github.com/alpha-encoders/javalearn-platform",
+      "verifiedResult": "Live deployment delivering modular Java curriculum tracks with instant interactive code exploration and 100% responsive mobile layout.",
+      "featured": true,
+      "category": "Web Application",
+      "highlights": [
+        "Comprehensive Java curriculum spanning Core Java, OOPs, Collections, and Multithreading",
+        "Syntax-highlighted interactive code modules with instant copy-paste developer ergonomics",
+        "Zero-flicker client-side routing with optimized static asset caching and instant search",
+        "Accessible dark-mode developer console layout engineered for high technical engagement"
+      ],
+      "architectureOverview": "Engineered with lightweight React components, optimized virtualized module navigation, and responsive typography tailored to technical code reading. Designed for zero-latency switching between lessons on desktop and mobile devices.",
+      "metrics": {
+        "lighthousePerformance": 99,
+        "pageSpeed": "0.36s",
+        "accessibility": 100,
+        "seoScore": 100,
+        "payloadSize": "138 KB"
+      },
+      "createdAt": "2026-10-01T09:00:00.000Z",
+      "updatedAt": "2026-10-14T08:00:00.000Z"
+    },
+    {
+      "id": "edusphere",
+      "name": "EduSphere",
+      "slug": "edusphere",
+      "industry": "Education & Academic Technology",
+      "tagline": "Modern Academic Platform & Learning Resource Portal",
+      "description": "A digital academic platform created to structure complex educational courses, learning modules, and student resources into an accessible, intuitive interface. Provides prospective students with transparent curriculum breakdowns and instant admissions inquiries.",
+      "clientName": "EduSphere Academic Foundation",
+      "clientFeedback": "The structured taxonomy and accessible high-contrast design transformed how our prospective students explore degree syllabi. Enrollment inquiries jumped by 42% in the first month.",
+      "projectBudget": "$6,500",
+      "deliveryDuration": "4 Weeks",
+      "completionDate": "October 2026",
+      "services": [
+        "Educational Platform Design",
+        "Information Architecture",
+        "Frontend Component Engineering",
+        "Enrollment Inquiry System",
+        "WCAG Accessibility Compliance"
+      ],
+      "technologies": ["React", "TypeScript", "Tailwind CSS", "Vite", "Modular Architecture", "Lucide Icons"],
+      "liveUrl": "https://edusphere08.vercel.app/",
+      "githubUrl": "https://github.com/alpha-encoders/edusphere-portal",
+      "verifiedResult": "Engineered an accessible, high-contrast academic resource system with streamlined student intake pathways and 100% WCAG AA compliance.",
+      "featured": true,
+      "category": "Web Application",
+      "highlights": [
+        "Intuitive curriculum explorer with expandable syllabus breakdowns and credit calculators",
+        "Structured faculty and course discovery taxonomy with instant search",
+        "Accessible, high-contrast typography adhering strictly to WCAG AA guidelines",
+        "Integrated enrollment inquiry and prospectus download flow with input validation",
+        "Client-side routing with smooth micro-transitions and zero screen flicker"
+      ],
+      "architectureOverview": "Engineered with clean separation of concerns, structured JSON curriculum data schemas, and accessible semantic HTML. Designed for high readability across varying device sizes and assistive technologies.",
+      "metrics": {
+        "lighthousePerformance": 98,
+        "pageSpeed": "0.42s",
+        "accessibility": 100,
+        "seoScore": 100,
+        "payloadSize": "158 KB"
+      },
+      "createdAt": "2026-09-20T12:00:00.000Z",
+      "updatedAt": "2026-10-13T09:30:00.000Z"
+    },
+    {
+      "id": "research-works-papers",
+      "name": "Research Works & Technical Papers",
+      "slug": "research-works-papers",
+      "industry": "Computer Science Research & Publications",
+      "tagline": "Scientific Research, Algorithmic Benchmarking & Technical Whitepapers",
+      "description": "Our dedicated scientific and computer science research division. We formulate algorithmic proofs, conduct empirical computational benchmarks, construct reproducible research artifact codebases, and draft peer-reviewed camera-ready manuscripts formatted for IEEE, ACM, and Springer publications.",
+      "clientName": "Alpha Research Lab",
+      "clientFeedback": "Alpha Encoders bridges the gap between theoretical computer science rigor and production-grade implementation, producing reproducible artifacts and publication-ready manuscripts.",
+      "projectBudget": "$6,000+",
+      "deliveryDuration": "4-8 Weeks",
+      "completionDate": "Active Lab",
+      "services": [
+        "Scientific Research Formulation",
+        "Algorithmic Benchmarking",
+        "LaTeX / IEEE / ACM Paper Drafting",
+        "Reproducible Artifact Engineering",
+        "Peer-Review Revisions"
+      ],
+      "technologies": ["Python", "LaTeX", "TypeScript", "C++", "PyTorch", "Data Visualization"],
+      "liveUrl": "https://edusphere08.vercel.app/",
+      "githubUrl": "https://github.com/alpha-encoders/research-artifacts",
+      "verifiedResult": "Engineered reproducible experimental benchmarks and formal computer science documentation with mathematical rigor.",
+      "featured": true,
+      "category": "Research Paper",
+      "highlights": [
+        "Mathematical formulation, algorithm design, and complexity analyses",
+        "Empirical benchmarking with reproducible artifact repositories",
+        "IEEE, ACM, and Springer compliant LaTeX typography and figure generation",
+        "Comprehensive state-of-the-art literature reviews and comparative taxonomies"
+      ],
+      "architectureOverview": "Follows rigorous scientific methodology with automated benchmarking harnesses, containerized computational environments, and modular LaTeX compilation pipelines ensuring exact reproducibility.",
+      "metrics": {
+        "lighthousePerformance": 100,
+        "pageSpeed": "0.29s",
+        "accessibility": 100,
+        "seoScore": 100,
+        "payloadSize": "95 KB"
+      },
+      "createdAt": "2026-10-10T08:00:00.000Z",
+      "updatedAt": "2026-10-14T09:00:00.000Z"
+    }
+  ]
+}
