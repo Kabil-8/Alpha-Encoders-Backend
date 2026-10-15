@@ -438,10 +438,11 @@ app.get('/api/users', (req: Request, res: Response) => {
 
 // Get single user complete details by id or email
 app.get('/api/users/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = String(req.params.id);
+  const idLower = id.toLowerCase();
   const db = readDB();
 
-  const user = db.users.find((u) => u.id === id || u.email.toLowerCase() === id.toLowerCase());
+  const user = db.users.find((u) => u.id === id || u.email.toLowerCase() === idLower);
   if (!user) {
     return res.status(404).json({ success: false, message: 'User not found in CRM.' });
   }
@@ -524,10 +525,11 @@ app.post('/api/users', (req: Request, res: Response) => {
 
 // Update user details (Admin)
 app.patch('/api/users/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = String(req.params.id);
+  const idLower = id.toLowerCase();
   const db = readDB();
 
-  const index = db.users.findIndex((u) => u.id === id || u.email.toLowerCase() === id.toLowerCase());
+  const index = db.users.findIndex((u) => u.id === id || u.email.toLowerCase() === idLower);
   if (index === -1) {
     return res.status(404).json({ success: false, message: 'User not found.' });
   }
@@ -554,11 +556,12 @@ app.patch('/api/users/:id', (req: Request, res: Response) => {
 
 // Delete user from CRM (Admin)
 app.delete('/api/users/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = String(req.params.id);
+  const idLower = id.toLowerCase();
   const db = readDB();
 
   const initialLen = db.users.length;
-  db.users = db.users.filter((u) => u.id !== id && u.email.toLowerCase() !== id.toLowerCase());
+  db.users = db.users.filter((u) => u.id !== id && u.email.toLowerCase() !== idLower);
 
   if (db.users.length === initialLen) {
     return res.status(404).json({ success: false, message: 'User not found in CRM.' });
