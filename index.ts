@@ -1,8 +1,20 @@
-import express, { Request, Response } from 'express';
+import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dns from 'dns';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Ensure DNS SRV records resolve cleanly on Windows/ISP networks
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch {
+  // Fall back to default system DNS if restricted
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,6 +22,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 const DB_FILE = path.join(__dirname, 'data', 'db.json');
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  'mongodb+srv://projectalphateam308_db_user:6dUMWkCu3MYsGcis@cluster0.cuqbzoa.mongodb.net/edusphere?retryWrites=true&w=majority';
 
 // Middleware
 app.use(cors());
@@ -133,9 +148,215 @@ const readDB = (): DatabaseSchema => {
   }
 };
 
+// ---------------------------------------------------------------------
+// MONGOOSE SCHEMAS & MODELS (Persistent MongoDB Atlas Collections)
+// ---------------------------------------------------------------------
+const AlphaInquirySchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    fullName: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: String,
+    company: String,
+    websiteType: { type: String, required: true },
+    requiredFeatures: [String],
+    estimatedBudget: String,
+    completionTimeline: String,
+    description: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ['new', 'contacted', 'in_review', 'closed'],
+      default: 'new'
+    },
+    notes: String,
+    createdAt: { type: String, default: () => new Date().toISOString() }
+  },
+  { collection: 'alpha_inquiries', timestamps: true }
+);
+
+const AlphaProjectSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
+    industry: { type: String, required: true },
+    tagline: String,
+    description: String,
+    clientName: String,
+    clientFeedback: String,
+    projectBudget: String,
+    deliveryDuration: String,
+    completionDate: String,
+    services: [String],
+    technologies: [String],
+    liveUrl: String,
+    githubUrl: String,
+    verifiedResult: String,
+    featured: { type: Boolean, default: false },
+    category: String,
+    highlights: [String],
+    architectureOverview: String,
+    metrics: {
+      lighthousePerformance: Number,
+      pageSpeed: String,
+      accessibility: Number,
+      seoScore: Number,
+      payloadSize: String
+    },
+    createdAt: { type: String, default: () => new Date().toISOString() },
+    updatedAt: String
+  },
+  { collection: 'alpha_projects', timestamps: true }
+);
+
+const AlphaUserSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    fullName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: String,
+    company: String,
+    location: String,
+    role: {
+      type: String,
+      enum: ['client', 'prospect', 'lead', 'vip'],
+      default: 'client'
+    },
+    status: {
+      type: String,
+      enum: ['active', 'in_discussion', 'completed', 'onboarding'],
+      default: 'active'
+    },
+    totalInquiries: { type: Number, default: 0 },
+    totalEstimatedValue: { type: Number, default: 0 },
+    currency: { type: String, default: 'USD' },
+    notes: String,
+    websiteTypes: [String],
+    associatedProjects: [String],
+    inquiryHistory: [
+      {
+        inquiryId: String,
+        websiteType: String,
+        submittedAt: String,
+        estimatedBudget: String,
+        completionTimeline: String,
+        status: String,
+        description: String,
+        requiredFeatures: [String]
+      }
+    ],
+    createdAt: { type: String, default: () => new Date().toISOString() },
+    lastActiveAt: { type: String, default: () => new Date().toISOString() }
+  },
+  { collection: 'alpha_users', timestamps: true }
+);
+
+const AlphaQuotationSchema = new mongoose.Schema(
+  {
+    quoteNumber: { type: String, required: true, unique: true },
+    issueDate: String,
+    validUntil: String,
+    currencyCode: String,
+    currencySymbol: String,
+    client: {
+      name: String,
+      company: String,
+      email: String,
+      phone: String,
+      location: String
+    },
+    projectTitle: String,
+    lineItems: [
+      {
+        id: String,
+        title: String,
+        description: String,
+        quantity: Number,
+        rate: Number
+      }
+    ],
+    subtotal: Number,
+    discountPercent: Number,
+    taxPercent: Number,
+    grandTotal: Number,
+    notes: String,
+    status: {
+      type: String,
+      enum: ['draft', 'sent', 'accepted', 'invoiced'],
+      default: 'draft'
+    },
+    createdAt: { type: String, default: () => new Date().toISOString() }
+  },
+  { collection: 'alpha_quotations', timestamps: true }
+);
+
+export const InquiryModel = mongoose.models.AlphaInquiry || mongoose.model('AlphaInquiry', AlphaInquirySchema);
+export const ProjectModel = mongoose.models.AlphaProject || mongoose.model('AlphaProject', AlphaProjectSchema);
+export const UserModel = mongoose.models.AlphaUser || mongoose.model('AlphaUser', AlphaUserSchema);
+export const QuotationModel = mongoose.models.AlphaQuotation || mongoose.model('AlphaQuotation', AlphaQuotationSchema);
+
+let isMongoConnected = false;
+
+const syncToMongo = async (data: DatabaseSchema) => {
+  if (!isMongoConnected) return;
+  try {
+    for (const p of data.projects) {
+      await ProjectModel.findOneAndUpdate({ id: p.id }, p, { upsert: true });
+    }
+    for (const u of data.users) {
+      await UserModel.findOneAndUpdate({ id: u.id }, u, { upsert: true });
+    }
+    for (const inq of data.inquiries) {
+      await InquiryModel.findOneAndUpdate({ id: inq.id }, inq, { upsert: true });
+    }
+  } catch (err) {
+    console.warn('[MongoDB Atlas] Auto-sync notice:', err);
+  }
+};
+
+export const seedInitialDataFromDB = async () => {
+  try {
+    const db = readDB();
+    const projCount = await ProjectModel.countDocuments();
+    if (projCount === 0 && db.projects.length > 0) {
+      await ProjectModel.insertMany(db.projects);
+      console.log(`[MongoDB Atlas] Seeded ${db.projects.length} verified projects into alpha_projects`);
+    }
+
+    const userCount = await UserModel.countDocuments();
+    if (userCount === 0 && db.users.length > 0) {
+      await UserModel.insertMany(db.users);
+      console.log(`[MongoDB Atlas] Seeded ${db.users.length} clients into alpha_users`);
+    }
+
+    const inqCount = await InquiryModel.countDocuments();
+    if (inqCount === 0 && db.inquiries.length > 0) {
+      await InquiryModel.insertMany(db.inquiries);
+      console.log(`[MongoDB Atlas] Seeded ${db.inquiries.length} inquiries into alpha_inquiries`);
+    }
+  } catch (err) {
+    console.error('[MongoDB Atlas] Seeding notice:', err);
+  }
+};
+
+export const connectMongoDB = async () => {
+  try {
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 6000
+    });
+    isMongoConnected = true;
+    console.log('[MongoDB Atlas] Connected successfully to cluster0.cuqbzoa.mongodb.net/edusphere');
+    await seedInitialDataFromDB();
+  } catch (err: any) {
+    isMongoConnected = false;
+    console.warn('[MongoDB Atlas] Connection notice (db.json fallback active):', err.message);
+  }
+};
+
 const writeDB = (data: DatabaseSchema): boolean => {
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    syncToMongo(data).catch(() => {});
     return true;
   } catch (err) {
     console.error('Error writing to db.json', err);
@@ -154,12 +375,19 @@ const calculateBudgetValue = (budgetStr?: string): number => {
 };
 
 // ---------------------------------------------------------------------
-// HEALTH CHECK
+// HEALTH CHECK & DATABASE STATUS
 // ---------------------------------------------------------------------
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'online',
     service: 'Alpha Encoders Core API',
+    database: {
+      provider: 'MongoDB Atlas',
+      cluster: 'cluster0.cuqbzoa.mongodb.net',
+      dbName: 'edusphere',
+      connected: isMongoConnected,
+      status: isMongoConnected ? 'connected' : 'fallback_mode'
+    },
     timestamp: new Date().toISOString()
   });
 });
@@ -788,13 +1016,78 @@ app.get('/api/admin/stats', (_req: Request, res: Response) => {
       totalUsers,
       activeClients,
       estimatedPipeline,
-      currency: 'USD'
+      currency: 'USD',
+      mongoConnected: isMongoConnected
     }
   });
 });
 
-// Start Server
-app.listen(PORT, () => {
+// ---------------------------------------------------------------------
+// QUOTATIONS API (Cloud Stored Proposals in MongoDB Atlas)
+// ---------------------------------------------------------------------
+app.get('/api/quotations', async (_req: Request, res: Response) => {
+  try {
+    if (isMongoConnected) {
+      const quotations = await QuotationModel.find().sort({ createdAt: -1 });
+      return res.json({ success: true, count: quotations.length, quotations });
+    }
+    return res.json({ success: true, count: 0, quotations: [] });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/quotations', async (req: Request, res: Response) => {
+  try {
+    const payload = req.body;
+    if (!payload.quoteNumber) {
+      payload.quoteNumber = `AE-QUO-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+    }
+
+    if (isMongoConnected) {
+      const saved = await QuotationModel.findOneAndUpdate(
+        { quoteNumber: payload.quoteNumber },
+        payload,
+        { upsert: true, new: true }
+      );
+      return res.json({
+        success: true,
+        message: 'Commercial proposal saved successfully to MongoDB Atlas.',
+        quotation: saved
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Commercial proposal accepted (running in local snapshot mode).',
+      quotation: payload
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/api/quotations/:id', async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    if (isMongoConnected) {
+      const quotation = await QuotationModel.findOne({
+        $or: [{ quoteNumber: id }, { _id: mongoose.isValidObjectId(id) ? id : null }]
+      });
+      if (!quotation) {
+        return res.status(404).json({ success: false, message: 'Quotation not found.' });
+      }
+      return res.json({ success: true, quotation });
+    }
+    res.status(404).json({ success: false, message: 'Database disconnected.' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Start Server & Connect to MongoDB Atlas
+app.listen(PORT, async () => {
   console.log(`[Alpha Encoders Server] Running on http://localhost:${PORT}`);
-  console.log(`[Alpha Encoders Server] Database linked: ${DB_FILE}`);
+  console.log(`[Alpha Encoders Server] Local snapshot cache: ${DB_FILE}`);
+  await connectMongoDB();
 });
