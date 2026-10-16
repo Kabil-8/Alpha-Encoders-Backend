@@ -135,5 +135,14 @@ This service can be deployed on any modern Node.js cloud platform:
 
 ---
 
+## 📬 Contact & Inquiries
+
+- **Lead Engineer & Founder:** K.Kabil
+- **Email:** [kabilk2023@gmail.com](mailto:kabilk2023@gmail.com)
+- **Phone / WhatsApp:** [+91 8667452487](tel:+918667452487)
+- **Website:** [https://alphaencoders.com](https://alphaencoders.com)
+
+---
+
 ## 📄 License
-MIT © [Alpha Encoders](https://alphaencoders.com) & [Kabil-8](https://github.com/Kabil-8)
+MIT © [Alpha Encoders](https://alphaencoders.com) & [K.Kabil](https://github.com/Kabil-8)

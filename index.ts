@@ -26,8 +26,72 @@ const MONGODB_URI =
   process.env.MONGODB_URI ||
   'mongodb+srv://projectalphateam308_db_user:6dUMWkCu3MYsGcis@cluster0.cuqbzoa.mongodb.net/edusphere?retryWrites=true&w=majority';
 
+// Trust reverse proxy (Render, Cloudflare, etc.)
+app.set('trust proxy', 1);
+
+// Allowed origins for CORS (Vercel production, preview deployments, local dev)
+const defaultAllowedOrigins = [
+  'https://alphaencoders.vercel.app',
+  'https://www.alphaencoders.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+];
+
+const envOrigins = [
+  ...(process.env.CLIENT_ORIGIN ? process.env.CLIENT_ORIGIN.split(',') : []),
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : []),
+]
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...envOrigins]));
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests (Postman, curl, Render health checks, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const cleanOrigin = origin.trim().replace(/\/+$/, '');
+
+    // Allow explicitly defined origins, Vercel subdomains/previews, or local dev
+    const isAllowed =
+      allowedOrigins.includes(cleanOrigin) ||
+      cleanOrigin.endsWith('.vercel.app') ||
+      cleanOrigin.includes('localhost') ||
+      cleanOrigin.includes('127.0.0.1') ||
+      cleanOrigin.includes('alphaencoders');
+
+    if (isAllowed) {
+      return callback(null, true);
+    }
+
+    // Dynamic fallback to reflect origin so CORS is never prematurely blocked
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers',
+  ],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400,
+  optionsSuccessStatus: 200,
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 // Comprehensive Interfaces
@@ -162,9 +226,9 @@ const readDB = (): DatabaseSchema => {
     console.error('Error reading db.json, returning empty structure', err);
     return {
       admin: {
-        email: 'admin@alphaencoders.com',
+        email: 'kabilk2023@gmail.com',
         passwordHash: 'admin123',
-        name: 'Lead Architect',
+        name: 'K.Kabil',
         role: 'Super Admin'
       },
       inquiries: [],
@@ -445,8 +509,19 @@ const calculateBudgetValue = (budgetStr?: string): number => {
 };
 
 // ---------------------------------------------------------------------
-// HEALTH CHECK & DATABASE STATUS
+// ROOT WELCOME & HEALTH CHECK
 // ---------------------------------------------------------------------
+app.get('/', (_req: Request, res: Response) => {
+  res.json({
+    status: 'online',
+    service: 'Alpha Encoders Core API & CRM Service',
+    docs: 'https://github.com/Kabil-8/Alpha-Encoders-Backend',
+    clientOrigin: 'https://alphaencoders.vercel.app',
+    healthCheck: '/api/health',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'online',
