@@ -92,7 +92,8 @@ const corsOptions: cors.CorsOptions = {
 // Middleware
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ limit: '25mb', extended: true }));
 
 // Comprehensive Interfaces
 export interface InquiryItem {
@@ -199,6 +200,17 @@ export interface InternshipApplication {
   startDate: string;
   status: 'pending' | 'reviewing' | 'shortlisted' | 'interview' | 'accepted' | 'rejected';
   adminNotes?: string;
+  feeType?: 'free' | 'paid';
+  feeAmount?: number;
+  slotNumber?: number;
+  isFirst50?: boolean;
+  paymentScreenshot?: string;
+  transactionId?: string;
+  paymentStatus?: 'free_granted' | 'pending' | 'verified' | 'rejected';
+  loiIssued?: boolean;
+  certificateIssued?: boolean;
+  lorIssued?: boolean;
+  acceptedAt?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -411,6 +423,21 @@ const AlphaInternshipSchema = new mongoose.Schema(
       default: 'pending'
     },
     adminNotes: String,
+    feeType: { type: String, enum: ['free', 'paid'], default: 'free' },
+    feeAmount: { type: Number, default: 0 },
+    slotNumber: Number,
+    isFirst50: { type: Boolean, default: false },
+    paymentScreenshot: String,
+    transactionId: String,
+    paymentStatus: {
+      type: String,
+      enum: ['free_granted', 'pending', 'verified', 'rejected'],
+      default: 'pending'
+    },
+    loiIssued: { type: Boolean, default: false },
+    certificateIssued: { type: Boolean, default: false },
+    lorIssued: { type: Boolean, default: false },
+    acceptedAt: String,
     createdAt: { type: String, default: () => new Date().toISOString() },
     updatedAt: String
   },
@@ -1402,9 +1429,59 @@ app.get('/api/admin/stats', (_req: Request, res: Response) => {
 // ---------------------------------------------------------------------
 // INTERNSHIPS & TALENT PIPELINE API (MongoDB Atlas & Local Sync)
 // ---------------------------------------------------------------------
+
+// GET /api/internships/stats - Real-time statistics including free slot usage & payment tracking
+app.get('/api/internships/stats', async (req: Request, res: Response) => {
+  try {
+    let allInternships: any[] = [];
+    if (isMongoConnected) {
+      allInternships = await InternshipModel.find({});
+    } else {
+      const db = readDB();
+      allInternships = db.internships || [];
+    }
+
+    const totalApplications = allInternships.length;
+    // Free slots claimed: candidates with feeType === 'free' or isFirst50 === true
+    const freeSlotsUsed = allInternships.filter(
+      (i: any) => i.feeType === 'free' || i.isFirst50 === true
+    ).length;
+    const freeSlotsTotal = 50;
+    const remainingFreeSlots = Math.max(0, freeSlotsTotal - freeSlotsUsed);
+    const paidApplications = allInternships.filter((i: any) => i.feeType === 'paid');
+    const pendingPaymentCount = paidApplications.filter(
+      (i: any) => i.paymentStatus === 'pending' || !i.paymentStatus
+    ).length;
+    const verifiedPaymentCount = paidApplications.filter(
+      (i: any) => i.paymentStatus === 'verified'
+    ).length;
+    const acceptedCount = allInternships.filter((i: any) => i.status === 'accepted').length;
+
+    return res.json({
+      success: true,
+      stats: {
+        totalApplications,
+        freeSlotsUsed,
+        freeSlotsTotal,
+        remainingFreeSlots,
+        isFreeSlotsFull: remainingFreeSlots === 0,
+        paidCount: paidApplications.length,
+        pendingPaymentCount,
+        verifiedPaymentCount,
+        acceptedCount,
+        standardFee: 150,
+        upiId: 'kabilk2023@oksbi',
+        payeeName: 'Kabil'
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.get('/api/internships', async (req: Request, res: Response) => {
   try {
-    const { domain, status, search } = req.query;
+    const { domain, status, search, feeType } = req.query;
 
     if (isMongoConnected) {
       const query: any = {};
@@ -1414,12 +1491,16 @@ app.get('/api/internships', async (req: Request, res: Response) => {
       if (status && status !== 'all') {
         query.status = status;
       }
+      if (feeType && feeType !== 'all') {
+        query.feeType = feeType;
+      }
       if (search) {
         query.$or = [
           { fullName: { $regex: String(search), $options: 'i' } },
           { email: { $regex: String(search), $options: 'i' } },
           { college: { $regex: String(search), $options: 'i' } },
           { domain: { $regex: String(search), $options: 'i' } },
+          { transactionId: { $regex: String(search), $options: 'i' } },
           { skills: { $regex: String(search), $options: 'i' } }
         ];
       }
@@ -1436,6 +1517,9 @@ app.get('/api/internships', async (req: Request, res: Response) => {
     if (status && status !== 'all') {
       results = results.filter((i) => i.status === status);
     }
+    if (feeType && feeType !== 'all') {
+      results = results.filter((i) => i.feeType === feeType);
+    }
     if (search) {
       const q = String(search).toLowerCase();
       results = results.filter(
@@ -1444,6 +1528,7 @@ app.get('/api/internships', async (req: Request, res: Response) => {
           i.email.toLowerCase().includes(q) ||
           i.college.toLowerCase().includes(q) ||
           i.domain.toLowerCase().includes(q) ||
+          (i.transactionId && i.transactionId.toLowerCase().includes(q)) ||
           i.skills.some((s) => s.toLowerCase().includes(q))
       );
     }
@@ -1496,7 +1581,10 @@ app.post('/api/internships', async (req: Request, res: Response) => {
       resumeUrl,
       statementOfPurpose,
       duration,
-      startDate
+      startDate,
+      feeType,
+      paymentScreenshot,
+      transactionId
     } = req.body;
 
     if (!fullName || !email || !college || !degree || !domain || !resumeUrl || !statementOfPurpose) {
@@ -1504,6 +1592,49 @@ app.post('/api/internships', async (req: Request, res: Response) => {
         success: false,
         message: 'Please complete all required fields (Full Name, Email, College, Degree, Domain, Resume Link, and Statement of Purpose).'
       });
+    }
+
+    // Determine current free slot allocation
+    const db = readDB();
+    let allInternships: any[] = [];
+    if (isMongoConnected) {
+      allInternships = await InternshipModel.find({});
+    } else {
+      allInternships = db.internships || [];
+    }
+
+    const freeSlotsUsed = allInternships.filter(
+      (i: any) => i.feeType === 'free' || i.isFirst50 === true
+    ).length;
+    const freeSlotsAvailable = Math.max(0, 50 - freeSlotsUsed);
+
+    let assignedFeeType: 'free' | 'paid' = 'paid';
+    let assignedFeeAmount = 150;
+    let assignedIsFirst50 = false;
+    let assignedSlotNumber = allInternships.length + 1;
+    let assignedPaymentStatus: 'free_granted' | 'pending' | 'verified' | 'rejected' = 'pending';
+
+    // If within first 50 and user chooses/qualifies for free slot
+    if (freeSlotsAvailable > 0 && (feeType === 'free' || !feeType)) {
+      assignedFeeType = 'free';
+      assignedFeeAmount = 0;
+      assignedIsFirst50 = true;
+      assignedSlotNumber = freeSlotsUsed + 1;
+      assignedPaymentStatus = 'free_granted';
+    } else {
+      // Standard Paid Slot: ₹150 required with payment screenshot and transaction ID
+      assignedFeeType = 'paid';
+      assignedFeeAmount = 150;
+      assignedIsFirst50 = false;
+      assignedSlotNumber = allInternships.length + 1;
+      assignedPaymentStatus = 'pending';
+
+      if (!paymentScreenshot || !transactionId || !String(transactionId).trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Payment verification required: Please upload the ₹150 payment screenshot and enter your UPI Transaction / UTR ID.'
+        });
+      }
     }
 
     const id = `AE-INT-${Date.now().toString().slice(-6)}`;
@@ -1530,11 +1661,22 @@ app.post('/api/internships', async (req: Request, res: Response) => {
       duration: duration || '3 Months',
       startDate: startDate || 'Immediate',
       status: 'pending',
-      adminNotes: 'Application received via Careers Portal. Pending review.',
+      feeType: assignedFeeType,
+      feeAmount: assignedFeeAmount,
+      slotNumber: assignedSlotNumber,
+      isFirst50: assignedIsFirst50,
+      paymentScreenshot: paymentScreenshot || undefined,
+      transactionId: transactionId ? String(transactionId).trim() : undefined,
+      paymentStatus: assignedPaymentStatus,
+      loiIssued: false,
+      certificateIssued: false,
+      lorIssued: false,
+      adminNotes: assignedIsFirst50
+        ? `Early-Bird Grant: Free Slot #${assignedSlotNumber}/50 assigned.`
+        : `Paid Registration (₹150). UTR: ${transactionId}. Payment screenshot uploaded; awaiting admin verification before acceptance.`,
       createdAt: new Date().toISOString()
     };
 
-    const db = readDB();
     if (!db.internships) db.internships = [];
     db.internships.unshift(newApplication);
     writeDB(db);
@@ -1549,7 +1691,9 @@ app.post('/api/internships', async (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      message: 'Your internship application has been submitted successfully to Alpha Encoders engineering board.',
+      message: assignedIsFirst50
+        ? `Congratulations! You secured Free Slot #${assignedSlotNumber}/50! Your application is in final review.`
+        : 'Payment proof received! Your ₹150 payment screenshot is undergoing admin verification. You will be accepted upon verification.',
       applicationId: id,
       internship: newApplication
     });
@@ -1561,7 +1705,7 @@ app.post('/api/internships', async (req: Request, res: Response) => {
 app.patch('/api/internships/:id/status', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, adminNotes } = req.body;
+    const { status, adminNotes, paymentStatus, loiIssued, certificateIssued, lorIssued } = req.body;
 
     const validStatuses = ['pending', 'reviewing', 'shortlisted', 'interview', 'accepted', 'rejected'];
     if (status && !validStatuses.includes(status)) {
@@ -1576,9 +1720,28 @@ app.patch('/api/internships/:id/status', async (req: Request, res: Response) => 
       return res.status(404).json({ success: false, message: 'Application not found.' });
     }
 
-    if (status) db.internships[index].status = status;
-    if (adminNotes !== undefined) db.internships[index].adminNotes = adminNotes;
-    db.internships[index].updatedAt = new Date().toISOString();
+    const currentApp = db.internships[index];
+
+    // Enforce acceptance rule: paid candidates MUST have verified payment before or upon accepting
+    if (status === 'accepted' && currentApp.feeType === 'paid') {
+      const resolvedPaymentStatus = paymentStatus || currentApp.paymentStatus;
+      if (resolvedPaymentStatus !== 'verified') {
+        // If the admin is accepting, auto-mark paymentStatus as verified if they confirmed payment
+        currentApp.paymentStatus = 'verified';
+      }
+    }
+
+    if (status) currentApp.status = status;
+    if (paymentStatus) currentApp.paymentStatus = paymentStatus;
+    if (adminNotes !== undefined) currentApp.adminNotes = adminNotes;
+    if (loiIssued !== undefined) currentApp.loiIssued = loiIssued;
+    if (certificateIssued !== undefined) currentApp.certificateIssued = certificateIssued;
+    if (lorIssued !== undefined) currentApp.lorIssued = lorIssued;
+    if (status === 'accepted' && !currentApp.acceptedAt) {
+      currentApp.acceptedAt = new Date().toISOString();
+      currentApp.loiIssued = true;
+    }
+    currentApp.updatedAt = new Date().toISOString();
 
     writeDB(db);
 
@@ -1587,8 +1750,13 @@ app.patch('/api/internships/:id/status', async (req: Request, res: Response) => 
         { id },
         {
           ...(status ? { status } : {}),
+          ...(paymentStatus ? { paymentStatus } : {}),
           ...(adminNotes !== undefined ? { adminNotes } : {}),
-          updatedAt: db.internships[index].updatedAt
+          ...(loiIssued !== undefined ? { loiIssued } : {}),
+          ...(certificateIssued !== undefined ? { certificateIssued } : {}),
+          ...(lorIssued !== undefined ? { lorIssued } : {}),
+          ...(status === 'accepted' ? { acceptedAt: currentApp.acceptedAt, loiIssued: true } : {}),
+          updatedAt: currentApp.updatedAt
         }
       );
     }

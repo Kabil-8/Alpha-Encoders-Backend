@@ -13,7 +13,12 @@
       "phone": "+1 415-555-0182",
       "company": "Artisan Flora Studio",
       "websiteType": "E-commerce",
-      "requiredFeatures": ["Product catalog", "Online payments", "Contact form", "SEO"],
+      "requiredFeatures": [
+        "Product catalog",
+        "Online payments",
+        "Contact form",
+        "SEO"
+      ],
       "estimatedBudget": "$2,500 – $5,000",
       "completionTimeline": "1-2 months",
       "description": "We run a bespoke botanical design brand and need a modern storefront similar to TheCustomNest with product catalogs and custom gift packaging checkout.",
@@ -28,7 +33,11 @@
       "phone": "+1 212-555-0199",
       "company": "Vance Advisory Partners",
       "websiteType": "Business website",
-      "requiredFeatures": ["Contact form", "SEO", "Analytics"],
+      "requiredFeatures": [
+        "Contact form",
+        "SEO",
+        "Analytics"
+      ],
       "estimatedBudget": "$5,000 – $10,000",
       "completionTimeline": "Within 2-4 weeks",
       "description": "Corporate headquarters website revamp for a private investment advisory firm. We require clean typography, executive bios, and fast mobile loading.",
@@ -43,7 +52,12 @@
       "phone": "+44 20 7946 0912",
       "company": "Nova Learning Academy",
       "websiteType": "Education",
-      "requiredFeatures": ["User authentication", "Admin dashboard", "Content management", "Booking or appointments"],
+      "requiredFeatures": [
+        "User authentication",
+        "Admin dashboard",
+        "Content management",
+        "Booking or appointments"
+      ],
       "estimatedBudget": "$5,000 – $10,000",
       "completionTimeline": "2-3 months",
       "description": "Looking to build a digital education portal with curriculum discovery, student registration, and downloadable learning syllabi similar to EduSphere.",
@@ -66,8 +80,13 @@
       "totalEstimatedValue": 4800,
       "currency": "USD",
       "notes": "Original creator of TheCustomNest. Extremely pleased with sub-second page performance and custom slide-out cart drawer. Currently planning Phase 2 international multi-currency rollout.",
-      "websiteTypes": ["E-commerce", "Custom Storefront"],
-      "associatedProjects": ["TheCustomNest"],
+      "websiteTypes": [
+        "E-commerce",
+        "Custom Storefront"
+      ],
+      "associatedProjects": [
+        "TheCustomNest"
+      ],
       "inquiryHistory": [
         {
           "inquiryId": "inq-initial-tcn",
@@ -77,7 +96,12 @@
           "completionTimeline": "Within 1 month",
           "status": "closed",
           "description": "Bespoke handcrafted crochet catalog with dynamic product filtering and direct checkout flow.",
-          "requiredFeatures": ["Product catalog", "Online payments", "Custom Cart Drawer", "Responsive Mobile UX"]
+          "requiredFeatures": [
+            "Product catalog",
+            "Online payments",
+            "Custom Cart Drawer",
+            "Responsive Mobile UX"
+          ]
         }
       ],
       "createdAt": "2026-08-10T09:15:00.000Z",
@@ -96,8 +120,13 @@
       "totalEstimatedValue": 6500,
       "currency": "USD",
       "notes": "Director of Academic Technologies at EduSphere. Praised the accessible high-contrast UI and modular curriculum breakdown structure. Exploring LMS student portal integration.",
-      "websiteTypes": ["Education", "Academic Portal"],
-      "associatedProjects": ["EduSphere"],
+      "websiteTypes": [
+        "Education",
+        "Academic Portal"
+      ],
+      "associatedProjects": [
+        "EduSphere"
+      ],
       "inquiryHistory": [
         {
           "inquiryId": "inq-initial-edu",
@@ -107,7 +136,12 @@
           "completionTimeline": "1-2 months",
           "status": "closed",
           "description": "Academic technology platform to structure complex educational courses and student admissions inquiry flows.",
-          "requiredFeatures": ["Curriculum Explorer", "Admissions Flow", "Accessibility Compliance", "Fast Mobile Loading"]
+          "requiredFeatures": [
+            "Curriculum Explorer",
+            "Admissions Flow",
+            "Accessibility Compliance",
+            "Fast Mobile Loading"
+          ]
         }
       ],
       "createdAt": "2026-08-25T11:00:00.000Z",
@@ -126,7 +160,9 @@
       "totalEstimatedValue": 3750,
       "currency": "USD",
       "notes": "Bespoke botanical brand looking for a modern aesthetic similar to TheCustomNest. High purchase intent. Discovery call proposal sent.",
-      "websiteTypes": ["E-commerce"],
+      "websiteTypes": [
+        "E-commerce"
+      ],
       "associatedProjects": [],
       "inquiryHistory": [
         {
@@ -137,7 +173,12 @@
           "completionTimeline": "1-2 months",
           "status": "new",
           "description": "We run a bespoke botanical design brand and need a modern storefront similar to TheCustomNest with product catalogs and custom gift packaging checkout.",
-          "requiredFeatures": ["Product catalog", "Online payments", "Contact form", "SEO"]
+          "requiredFeatures": [
+            "Product catalog",
+            "Online payments",
+            "Contact form",
+            "SEO"
+          ]
         }
       ],
       "createdAt": "2026-10-12T08:30:00.000Z",
@@ -156,7 +197,9 @@
       "totalEstimatedValue": 7500,
       "currency": "USD",
       "notes": "Managing Partner at Vance Advisory Partners. Needs an institutional corporate headquarters revamp. Executive meeting set for Thursday.",
-      "websiteTypes": ["Business website"],
+      "websiteTypes": [
+        "Business website"
+      ],
       "associatedProjects": [],
       "inquiryHistory": [
         {
@@ -167,7 +210,11 @@
           "completionTimeline": "Within 2-4 weeks",
           "status": "contacted",
           "description": "Corporate headquarters website revamp for a private investment advisory firm. We require clean typography, executive bios, and fast mobile loading.",
-          "requiredFeatures": ["Contact form", "SEO", "Analytics"]
+          "requiredFeatures": [
+            "Contact form",
+            "SEO",
+            "Analytics"
+          ]
         }
       ],
       "createdAt": "2026-10-10T14:15:00.000Z",
@@ -186,7 +233,9 @@
       "totalEstimatedValue": 7500,
       "currency": "USD",
       "notes": "European education foundation. Looking to build a comprehensive student portal. Architecture RFP currently under review by our engineering team.",
-      "websiteTypes": ["Education"],
+      "websiteTypes": [
+        "Education"
+      ],
       "associatedProjects": [],
       "inquiryHistory": [
         {
@@ -197,7 +246,12 @@
           "completionTimeline": "2-3 months",
           "status": "in_review",
           "description": "Looking to build a digital education portal with curriculum discovery, student registration, and downloadable learning syllabi.",
-          "requiredFeatures": ["User authentication", "Admin dashboard", "Content management", "Booking or appointments"]
+          "requiredFeatures": [
+            "User authentication",
+            "Admin dashboard",
+            "Content management",
+            "Booking or appointments"
+          ]
         }
       ],
       "createdAt": "2026-10-08T11:45:00.000Z",
@@ -224,7 +278,14 @@
         "Cart & Inquiry Flow",
         "Performance Tuning"
       ],
-      "technologies": ["React", "TypeScript", "Tailwind CSS", "Vite", "Lucide Icons", "Framer Motion"],
+      "technologies": [
+        "React",
+        "TypeScript",
+        "Tailwind CSS",
+        "Vite",
+        "Lucide Icons",
+        "Framer Motion"
+      ],
       "liveUrl": "https://www.thecustomnest.shop/",
       "githubUrl": "https://github.com/alpha-encoders/the-custom-nest",
       "verifiedResult": "Deployed custom e-commerce experience with sub-second page loads (0.38s FCP) and zero layout shifts across mobile and desktop.",
@@ -266,7 +327,14 @@
         "Technical Documentation UX",
         "Performance Tuning"
       ],
-      "technologies": ["React", "TypeScript", "Tailwind CSS", "Vite", "Lucide Icons", "Syntax Highlighting"],
+      "technologies": [
+        "React",
+        "TypeScript",
+        "Tailwind CSS",
+        "Vite",
+        "Lucide Icons",
+        "Syntax Highlighting"
+      ],
       "liveUrl": "https://javalearn-omega.vercel.app/",
       "githubUrl": "https://github.com/alpha-encoders/javalearn-platform",
       "verifiedResult": "Live deployment delivering modular Java curriculum tracks with instant interactive code exploration and 100% responsive mobile layout.",
@@ -308,7 +376,14 @@
         "Enrollment Inquiry System",
         "WCAG Accessibility Compliance"
       ],
-      "technologies": ["React", "TypeScript", "Tailwind CSS", "Vite", "Modular Architecture", "Lucide Icons"],
+      "technologies": [
+        "React",
+        "TypeScript",
+        "Tailwind CSS",
+        "Vite",
+        "Modular Architecture",
+        "Lucide Icons"
+      ],
       "liveUrl": "https://edusphere08.vercel.app/",
       "githubUrl": "https://github.com/alpha-encoders/edusphere-portal",
       "verifiedResult": "Engineered an accessible, high-contrast academic resource system with streamlined student intake pathways and 100% WCAG AA compliance.",
@@ -351,7 +426,14 @@
         "Reproducible Artifact Engineering",
         "Peer-Review Revisions"
       ],
-      "technologies": ["Python", "LaTeX", "TypeScript", "C++", "PyTorch", "Data Visualization"],
+      "technologies": [
+        "Python",
+        "LaTeX",
+        "TypeScript",
+        "C++",
+        "PyTorch",
+        "Data Visualization"
+      ],
       "liveUrl": "https://edusphere08.vercel.app/",
       "githubUrl": "https://github.com/alpha-encoders/research-artifacts",
       "verifiedResult": "Engineered reproducible experimental benchmarks and formal computer science documentation with mathematical rigor.",
@@ -386,7 +468,14 @@
       "graduationYear": "2026",
       "domain": "Full-Stack Web Development",
       "experienceLevel": "Advanced",
-      "skills": ["React", "TypeScript", "Node.js", "Express", "MongoDB", "Tailwind CSS"],
+      "skills": [
+        "React",
+        "TypeScript",
+        "Node.js",
+        "Express",
+        "MongoDB",
+        "Tailwind CSS"
+      ],
       "portfolioUrl": "https://aarav-dev.vercel.app",
       "githubUrl": "https://github.com/aarav-sharma-dev",
       "linkedinUrl": "https://linkedin.com/in/aarav-sharma-cs",
@@ -396,7 +485,13 @@
       "startDate": "Immediate",
       "status": "shortlisted",
       "adminNotes": "Strong portfolio. Codebase demonstrates clean architecture and custom React hooks. Scheduled technical review.",
-      "createdAt": "2026-10-13T10:15:00.000Z"
+      "createdAt": "2026-10-13T10:15:00.000Z",
+      "feeType": "free",
+      "feeAmount": 0,
+      "slotNumber": 1,
+      "isFirst50": true,
+      "paymentStatus": "free_granted",
+      "loiIssued": false
     },
     {
       "id": "AE-INT-260102",
@@ -408,7 +503,14 @@
       "graduationYear": "2026",
       "domain": "AI & Machine Learning / GenAI",
       "experienceLevel": "Intermediate",
-      "skills": ["Python", "PyTorch", "LangChain", "Vector DBs", "RAG", "FastAPI"],
+      "skills": [
+        "Python",
+        "PyTorch",
+        "LangChain",
+        "Vector DBs",
+        "RAG",
+        "FastAPI"
+      ],
       "portfolioUrl": "https://priyasundaram.ai",
       "githubUrl": "https://github.com/priya-sundaram-ai",
       "linkedinUrl": "https://linkedin.com/in/priya-sundaram-ai",
@@ -418,7 +520,13 @@
       "startDate": "Immediate",
       "status": "reviewing",
       "adminNotes": "Published 1 student paper on semantic search latency optimization. Good match for research & AI tracks.",
-      "createdAt": "2026-10-14T14:30:00.000Z"
+      "createdAt": "2026-10-14T14:30:00.000Z",
+      "feeType": "free",
+      "feeAmount": 0,
+      "slotNumber": 2,
+      "isFirst50": true,
+      "paymentStatus": "free_granted",
+      "loiIssued": false
     },
     {
       "id": "AE-INT-260103",
@@ -430,7 +538,14 @@
       "graduationYear": "2027",
       "domain": "Frontend Engineering & UI/UX Design",
       "experienceLevel": "Intermediate",
-      "skills": ["React", "TypeScript", "Tailwind CSS", "Framer Motion", "Figma", "Next.js"],
+      "skills": [
+        "React",
+        "TypeScript",
+        "Tailwind CSS",
+        "Framer Motion",
+        "Figma",
+        "Next.js"
+      ],
       "portfolioUrl": "https://rohanverma.design",
       "githubUrl": "https://github.com/rohan-v-design",
       "linkedinUrl": "https://linkedin.com/in/rohan-verma-uiux",
@@ -440,7 +555,13 @@
       "startDate": "Within 2 Weeks",
       "status": "pending",
       "adminNotes": "Initial screening pending.",
-      "createdAt": "2026-10-15T09:20:00.000Z"
+      "createdAt": "2026-10-15T09:20:00.000Z",
+      "feeType": "free",
+      "feeAmount": 0,
+      "slotNumber": 3,
+      "isFirst50": true,
+      "paymentStatus": "free_granted",
+      "loiIssued": false
     }
   ]
 }
