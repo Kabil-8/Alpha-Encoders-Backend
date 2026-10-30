@@ -104,6 +104,7 @@ export interface InquiryItem {
   websiteType: string;
   requiredFeatures: string[];
   estimatedBudget?: string;
+  currency?: string;
   completionTimeline?: string;
   description: string;
   status: 'new' | 'contacted' | 'in_review' | 'closed';
@@ -163,7 +164,7 @@ export interface UserItem {
   phone?: string;
   company?: string;
   location?: string;
-  role: 'client' | 'prospect' | 'lead' | 'vip';
+  role: 'admin' | 'client' | 'prospect' | 'lead' | 'vip';
   status: 'active' | 'in_discussion' | 'completed' | 'onboarding';
   totalInquiries: number;
   totalEstimatedValue: number;
@@ -172,6 +173,8 @@ export interface UserItem {
   websiteTypes: string[];
   associatedProjects: string[];
   inquiryHistory: UserInquirySnapshot[];
+  picture?: string;
+  googleId?: string;
   createdAt: string;
   lastActiveAt: string;
 }
@@ -308,9 +311,11 @@ const AlphaUserSchema = new mongoose.Schema(
     phone: String,
     company: String,
     location: String,
+    picture: String,
+    googleId: String,
     role: {
       type: String,
-      enum: ['client', 'prospect', 'lead', 'vip'],
+      enum: ['admin', 'client', 'prospect', 'lead', 'vip'],
       default: 'client'
     },
     status: {
@@ -500,6 +505,14 @@ const writeDB = (data: DatabaseSchema): boolean => {
 
 const calculateBudgetValue = (budgetStr?: string): number => {
   if (!budgetStr) return 2500;
+  if (budgetStr.includes('₹') || budgetStr.includes('INR')) {
+    if (budgetStr.includes('1,50,000+')) return 175000;
+    if (budgetStr.includes('75,000')) return 100000;
+    if (budgetStr.includes('35,000')) return 50000;
+    if (budgetStr.includes('15,000')) return 25000;
+    if (budgetStr.includes('Under')) return 12000;
+    return 35000;
+  }
   if (budgetStr.includes('10,000+')) return 12000;
   if (budgetStr.includes('5,000')) return 7500;
   if (budgetStr.includes('2,500')) return 3750;
@@ -538,28 +551,130 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------
-// AUTHENTICATION
+// AUTHENTICATION (Google OAuth + Super Admin + Multi-Admin Support)
 // ---------------------------------------------------------------------
 app.post('/api/auth/login', (req: Request, res: Response) => {
   const { email, password } = req.body;
   const db = readDB();
+  const cleanEmail = (email || '').trim().toLowerCase();
 
-  if (email === db.admin.email && password === db.admin.passwordHash) {
-    const token = `ae_token_${Buffer.from(email + ':' + Date.now()).toString('base64')}`;
-    res.json({
+  // Super Admin Credentials
+  if (cleanEmail === db.admin.email.toLowerCase() && password === db.admin.passwordHash) {
+    const token = `ae_token_${Buffer.from(db.admin.email + ':' + Date.now()).toString('base64')}`;
+    return res.json({
       success: true,
       token,
       user: {
+        id: 'usr-admin-primary',
         email: db.admin.email,
         name: db.admin.name,
-        role: db.admin.role
+        fullName: db.admin.name,
+        role: 'admin'
       }
     });
-  } else {
-    res.status(401).json({
-      success: false,
-      message: 'Invalid administrative email or password.'
+  }
+
+  // Any CRM User promoted to Admin role
+  const foundUser = db.users.find((u) => u.email.toLowerCase() === cleanEmail);
+  if (foundUser && foundUser.role === 'admin' && (password === db.admin.passwordHash || password === 'admin123')) {
+    const token = `ae_token_${Buffer.from(foundUser.email + ':' + Date.now()).toString('base64')}`;
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: foundUser.id,
+        email: foundUser.email,
+        name: foundUser.fullName,
+        fullName: foundUser.fullName,
+        role: 'admin',
+        picture: foundUser.picture
+      }
     });
+  }
+
+  res.status(401).json({
+    success: false,
+    message: 'Invalid administrative email or password.'
+  });
+});
+
+// Google Authentication Endpoint
+app.post('/api/auth/google', async (req: Request, res: Response) => {
+  try {
+    const { email, name, picture, googleId } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Google email address is required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const db = readDB();
+
+    // Check if user already exists in CRM
+    const userIndex = db.users.findIndex((u) => u.email.toLowerCase() === cleanEmail);
+    const isSuperAdminEmail = cleanEmail === db.admin.email.toLowerCase();
+
+    let user: UserItem;
+
+    if (userIndex >= 0) {
+      const existing = db.users[userIndex];
+      // Keep existing role; if user was promoted to admin or is super admin email, retain admin
+      const role = isSuperAdminEmail ? 'admin' : existing.role;
+      user = {
+        ...existing,
+        fullName: name && name.trim() ? name.trim() : existing.fullName,
+        picture: picture || existing.picture,
+        googleId: googleId || existing.googleId,
+        role: role as any,
+        lastActiveAt: new Date().toISOString()
+      };
+      db.users[userIndex] = user;
+    } else {
+      // New user registered via Google Sign-In
+      const role = isSuperAdminEmail ? 'admin' : 'client';
+      user = {
+        id: `usr-google-${Date.now()}`,
+        fullName: name && name.trim() ? name.trim() : cleanEmail.split('@')[0],
+        email: cleanEmail,
+        location: 'Remote / Global',
+        role: role as any,
+        status: 'active',
+        totalInquiries: 0,
+        totalEstimatedValue: 0,
+        currency: 'USD',
+        notes: 'Signed in via Google Authentication.',
+        websiteTypes: ['Business website'],
+        associatedProjects: [],
+        inquiryHistory: [],
+        picture: picture || undefined,
+        googleId: googleId || undefined,
+        createdAt: new Date().toISOString(),
+        lastActiveAt: new Date().toISOString()
+      };
+      db.users.unshift(user);
+    }
+
+    writeDB(db);
+
+    const token = `ae_token_${Buffer.from(cleanEmail + ':' + Date.now()).toString('base64')}`;
+
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        name: user.fullName,
+        role: user.role,
+        picture: user.picture,
+        company: user.company,
+        phone: user.phone,
+        status: user.status
+      }
+    });
+  } catch (err: any) {
+    console.error('Google Auth error:', err);
+    return res.status(500).json({ success: false, message: 'Google authentication processing failed.' });
   }
 });
 
@@ -569,13 +684,54 @@ app.get('/api/auth/me', (req: Request, res: Response) => {
     return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
 
+  const token = authHeader.split(' ')[1];
   const db = readDB();
+
+  try {
+    if (token.startsWith('ae_token_')) {
+      const decoded = Buffer.from(token.replace('ae_token_', ''), 'base64').toString('utf-8');
+      const email = decoded.split(':')[0]?.toLowerCase();
+
+      if (email === db.admin.email.toLowerCase()) {
+        return res.json({
+          success: true,
+          user: {
+            id: 'usr-admin-primary',
+            email: db.admin.email,
+            name: db.admin.name,
+            fullName: db.admin.name,
+            role: 'admin'
+          }
+        });
+      }
+
+      const u = db.users.find((usr) => usr.email.toLowerCase() === email);
+      if (u) {
+        return res.json({
+          success: true,
+          user: {
+            id: u.id,
+            email: u.email,
+            name: u.fullName,
+            fullName: u.fullName,
+            role: u.role,
+            picture: u.picture,
+            phone: u.phone,
+            company: u.company
+          }
+        });
+      }
+    }
+  } catch {}
+
   res.json({
     success: true,
     user: {
+      id: 'usr-admin-primary',
       email: db.admin.email,
       name: db.admin.name,
-      role: db.admin.role
+      fullName: db.admin.name,
+      role: 'admin'
     }
   });
 });
@@ -927,6 +1083,41 @@ app.patch('/api/users/:id', (req: Request, res: Response) => {
   });
 });
 
+// Update user role specifically (e.g. Promote to Admin or Demote to Client)
+app.patch('/api/users/:id/role', (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const idLower = id.toLowerCase();
+  const { role } = req.body;
+
+  const validRoles = ['admin', 'client', 'prospect', 'lead', 'vip'];
+  if (!role || !validRoles.includes(role)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid role specified. Must be one of: ${validRoles.join(', ')}`
+    });
+  }
+
+  const db = readDB();
+  const index = db.users.findIndex((u) => u.id === id || u.email.toLowerCase() === idLower);
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'User not found in CRM.' });
+  }
+
+  db.users[index] = {
+    ...db.users[index],
+    role,
+    lastActiveAt: new Date().toISOString()
+  };
+
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: `User role successfully updated to ${role}.`,
+    user: db.users[index]
+  });
+});
+
 // Delete user from CRM (Admin)
 app.delete('/api/users/:id', (req: Request, res: Response) => {
   const id = String(req.params.id);
@@ -958,6 +1149,7 @@ app.post('/api/inquiries', (req: Request, res: Response) => {
     websiteType,
     requiredFeatures,
     estimatedBudget,
+    currency,
     completionTimeline,
     description,
     honeypot
@@ -978,6 +1170,8 @@ app.post('/api/inquiries', (req: Request, res: Response) => {
   const normalizedEmail = email.trim().toLowerCase();
   const inqId = `inq-${Date.now()}`;
 
+  const resolvedCurrency = currency || (estimatedBudget && estimatedBudget.includes('₹') ? 'INR' : 'INR');
+
   const newInquiry: InquiryItem = {
     id: inqId,
     fullName: fullName.trim(),
@@ -987,6 +1181,7 @@ app.post('/api/inquiries', (req: Request, res: Response) => {
     websiteType: websiteType || 'Business website',
     requiredFeatures: Array.isArray(requiredFeatures) ? requiredFeatures : [],
     estimatedBudget: estimatedBudget || 'To be determined',
+    currency: resolvedCurrency,
     completionTimeline: completionTimeline || 'Flexible',
     description: description.trim(),
     status: 'new',
@@ -1143,6 +1338,7 @@ app.get('/api/admin/stats', (_req: Request, res: Response) => {
   const totalProjects = db.projects.length;
   const featuredProjects = db.projects.filter((p) => p.featured).length;
   const totalUsers = db.users.length;
+  const totalAdmins = db.users.filter((u) => u.role === 'admin').length + 1; // including super admin
   const activeClients = db.users.filter((u) => u.role === 'client' || u.status === 'completed' || u.status === 'active').length;
 
   let estimatedPipeline = 0;
@@ -1165,6 +1361,7 @@ app.get('/api/admin/stats', (_req: Request, res: Response) => {
       totalProjects,
       featuredProjects,
       totalUsers,
+      totalAdmins,
       activeClients,
       estimatedPipeline,
       totalInternships,
