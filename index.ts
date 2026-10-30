@@ -678,6 +678,32 @@ app.post('/api/auth/google', async (req: Request, res: Response) => {
   }
 });
 
+// Update Google Client ID configuration
+app.post('/api/config/google-client-id', (req: Request, res: Response) => {
+  const { clientId } = req.body;
+  if (!clientId || typeof clientId !== 'string' || !clientId.trim()) {
+    return res.status(400).json({ success: false, message: 'Valid Google Client ID is required.' });
+  }
+
+  const cleanId = clientId.trim();
+  try {
+    const rootEnvPath = path.resolve(__dirname, '..', '.env');
+    if (fs.existsSync(rootEnvPath)) {
+      let content = fs.readFileSync(rootEnvPath, 'utf-8');
+      if (content.includes('VITE_GOOGLE_CLIENT_ID=')) {
+        content = content.replace(/VITE_GOOGLE_CLIENT_ID=.*/g, `VITE_GOOGLE_CLIENT_ID=${cleanId}`);
+      } else {
+        content += `\nVITE_GOOGLE_CLIENT_ID=${cleanId}\n`;
+      }
+      fs.writeFileSync(rootEnvPath, content, 'utf-8');
+    }
+  } catch (err) {
+    console.warn('Notice: Could not persist client ID to root .env file', err);
+  }
+
+  res.json({ success: true, clientId: cleanId });
+});
+
 app.get('/api/auth/me', (req: Request, res: Response) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
