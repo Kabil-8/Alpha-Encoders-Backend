@@ -198,7 +198,7 @@ export interface InternshipApplication {
   statementOfPurpose: string;
   duration: string;
   startDate: string;
-  status: 'pending' | 'reviewing' | 'shortlisted' | 'interview' | 'accepted' | 'rejected';
+  status: 'pending' | 'reviewing' | 'awaiting_payment' | 'payment_submitted' | 'accepted' | 'rejected' | 'shortlisted' | 'interview';
   adminNotes?: string;
   feeType?: 'free' | 'paid';
   feeAmount?: number;
@@ -419,7 +419,7 @@ const AlphaInternshipSchema = new mongoose.Schema(
     startDate: { type: String, default: 'Immediate' },
     status: {
       type: String,
-      enum: ['pending', 'reviewing', 'shortlisted', 'interview', 'accepted', 'rejected'],
+      enum: ['pending', 'reviewing', 'awaiting_payment', 'payment_submitted', 'accepted', 'rejected', 'shortlisted', 'interview'],
       default: 'pending'
     },
     adminNotes: String,
@@ -483,25 +483,24 @@ export const seedInitialDataFromDB = async () => {
       console.log(`[MongoDB Atlas] Seeded ${db.projects.length} verified projects into alpha_projects`);
     }
 
-    const userCount = await UserModel.countDocuments();
-    if (userCount === 0 && db.users.length > 0) {
-      await UserModel.insertMany(db.users);
-      console.log(`[MongoDB Atlas] Seeded ${db.users.length} clients into alpha_users`);
+    // Ensure super admin Kabil exists in Mongo UserModel, and purge any old dummy seeded users
+    if (db.users && db.users.length > 0) {
+      for (const u of db.users) {
+        await UserModel.findOneAndUpdate({ email: u.email }, u, { upsert: true });
+      }
     }
-
-    const inqCount = await InquiryModel.countDocuments();
-    if (inqCount === 0 && db.inquiries.length > 0) {
-      await InquiryModel.insertMany(db.inquiries);
-      console.log(`[MongoDB Atlas] Seeded ${db.inquiries.length} inquiries into alpha_inquiries`);
-    }
-
-    const internCount = await InternshipModel.countDocuments();
-    if (internCount === 0 && db.internships && db.internships.length > 0) {
-      await InternshipModel.insertMany(db.internships);
-      console.log(`[MongoDB Atlas] Seeded ${db.internships.length} internship applications into alpha_internships`);
-    }
+    // Remove dummy seeded users, dummy inquiries, and dummy internships from Mongo if any exist
+    await UserModel.deleteMany({
+      email: { $in: ['anya@thecustomnest.com', 'david.chen@edusphere.edu', 'sarah.jenkins@artisanflora.com', 'marcus@vancecapital.io', 'elena@novalearn.org'] }
+    });
+    await InquiryModel.deleteMany({
+      id: { $in: ['inq-001', 'inq-002', 'inq-003'] }
+    });
+    await InternshipModel.deleteMany({
+      id: { $in: ['AE-INT-260101', 'AE-INT-260102', 'AE-INT-260103'] }
+    });
   } catch (err) {
-    console.error('[MongoDB Atlas] Seeding notice:', err);
+    console.error('[MongoDB Atlas] Sync notice:', err);
   }
 };
 
@@ -1707,7 +1706,16 @@ app.patch('/api/internships/:id/status', async (req: Request, res: Response) => 
     const { id } = req.params;
     const { status, adminNotes, paymentStatus, loiIssued, certificateIssued, lorIssued } = req.body;
 
-    const validStatuses = ['pending', 'reviewing', 'shortlisted', 'interview', 'accepted', 'rejected'];
+    const validStatuses = [
+      'pending',
+      'reviewing',
+      'awaiting_payment',
+      'payment_submitted',
+      'accepted',
+      'rejected',
+      'shortlisted',
+      'interview'
+    ];
     if (status && !validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
     }
@@ -1722,13 +1730,16 @@ app.patch('/api/internships/:id/status', async (req: Request, res: Response) => 
 
     const currentApp = db.internships[index];
 
-    // Enforce acceptance rule: paid candidates MUST have verified payment before or upon accepting
+    // Enforce strict acceptance gate:
+    // If setting to 'accepted' and feeType is 'paid', candidate must have submitted payment proof
     if (status === 'accepted' && currentApp.feeType === 'paid') {
-      const resolvedPaymentStatus = paymentStatus || currentApp.paymentStatus;
-      if (resolvedPaymentStatus !== 'verified') {
-        // If the admin is accepting, auto-mark paymentStatus as verified if they confirmed payment
-        currentApp.paymentStatus = 'verified';
+      if (!currentApp.paymentScreenshot && !currentApp.transactionId && paymentStatus !== 'verified') {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot accept for internship yet: Candidate must submit their ₹150 payment screenshot and UTR first. Set status to "Awaiting Payment" to request payment.'
+        });
       }
+      currentApp.paymentStatus = 'verified';
     }
 
     if (status) currentApp.status = status;
@@ -1755,7 +1766,7 @@ app.patch('/api/internships/:id/status', async (req: Request, res: Response) => 
           ...(loiIssued !== undefined ? { loiIssued } : {}),
           ...(certificateIssued !== undefined ? { certificateIssued } : {}),
           ...(lorIssued !== undefined ? { lorIssued } : {}),
-          ...(status === 'accepted' ? { acceptedAt: currentApp.acceptedAt, loiIssued: true } : {}),
+          ...(status === 'accepted' ? { acceptedAt: currentApp.acceptedAt, loiIssued: true, paymentStatus: 'verified' } : {}),
           updatedAt: currentApp.updatedAt
         }
       );
@@ -1765,6 +1776,67 @@ app.patch('/api/internships/:id/status', async (req: Request, res: Response) => 
       success: true,
       message: 'Internship application status updated successfully.',
       internship: db.internships[index]
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Candidate Payment Submission Endpoint (when in awaiting_payment status)
+app.post('/api/internships/:id/payment', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { transactionId, paymentScreenshot } = req.body;
+
+    if (!transactionId || !String(transactionId).trim()) {
+      return res.status(400).json({ success: false, message: 'UPI Transaction / UTR ID is required.' });
+    }
+    if (!paymentScreenshot) {
+      return res.status(400).json({ success: false, message: '₹150 payment screenshot is required.' });
+    }
+
+    const db = readDB();
+    if (!db.internships) db.internships = [];
+    const index = db.internships.findIndex(
+      (i) => i.id === id || i.email.toLowerCase() === id.toLowerCase()
+    );
+
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Application not found with provided ID or Email.' });
+    }
+
+    const currentApp = db.internships[index];
+    currentApp.transactionId = String(transactionId).trim();
+    currentApp.paymentScreenshot = paymentScreenshot;
+    currentApp.feeType = 'paid';
+    currentApp.feeAmount = 150;
+    currentApp.paymentStatus = 'pending';
+    currentApp.status = 'payment_submitted';
+    currentApp.updatedAt = new Date().toISOString();
+    currentApp.adminNotes = `Candidate uploaded ₹150 payment proof (UTR: ${currentApp.transactionId}). Awaiting admin verification.`;
+
+    writeDB(db);
+
+    if (isMongoConnected) {
+      await InternshipModel.findOneAndUpdate(
+        { $or: [{ id: currentApp.id }, { email: currentApp.email }] },
+        {
+          transactionId: currentApp.transactionId,
+          paymentScreenshot: currentApp.paymentScreenshot,
+          feeType: 'paid',
+          feeAmount: 150,
+          paymentStatus: 'pending',
+          status: 'payment_submitted',
+          updatedAt: currentApp.updatedAt,
+          adminNotes: currentApp.adminNotes
+        }
+      );
+    }
+
+    res.json({
+      success: true,
+      message: 'Payment screenshot submitted successfully! Our admin team will verify your ₹150 transaction. Once verified, your status will become Officially Accepted and your Letter of Intent (LOI) will be released.',
+      internship: currentApp
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
